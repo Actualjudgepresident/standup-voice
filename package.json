@@ -1,0 +1,25 @@
+{
+  "name": "standupbee",
+  "version": "0.1.0",
+  "description": "Turn what you said out loud during a dev day (captured by Bee) into GitHub issues, Bee todos and a daily standup.",
+  "type": "module",
+  "license": "MIT",
+  "bin": { "standupbee": "src/cli.ts" },
+  "engines": { "node": ">=23.6" },
+  "scripts": {
+    "start": "node src/cli.ts",
+    "demo": "node src/cli.ts run --source fixtures --extractor rules",
+    "test": "node --test \"test/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/bedrock-sdk": "latest",
+    "@anthropic-ai/sdk": "latest",
+    "@beeai/cli": "^0.7.3",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "typescript": "latest"
+  }
+}

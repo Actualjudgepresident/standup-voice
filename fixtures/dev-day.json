@@ -1,0 +1,137 @@
+{
+  "conversations": [
+    {
+      "id": 9101,
+      "start_time": -32400000,
+      "end_time": null,
+      "summary": "Morning standup with the payments team",
+      "transcriptions": [
+        {
+          "utterances": [
+            {
+              "speaker": "me",
+              "text": "Morning. Yesterday I finished the webhook signature check, it's merged.",
+              "spoken_at": -32400000
+            },
+            {
+              "speaker": "Priya",
+              "text": "Nice. The checkout service is still throwing 500s when the coupon code is empty.",
+              "spoken_at": -32360000
+            },
+            {
+              "speaker": "me",
+              "text": "Yeah that's a regression from my refactor. I'll fix the empty coupon crash today.",
+              "spoken_at": -32320000
+            },
+            {
+              "speaker": "Marcus",
+              "text": "I'm blocked on the staging database, the migration lock never released.",
+              "spoken_at": -32280000
+            },
+            {
+              "speaker": "Priya",
+              "text": "I will pair with Marcus on the migration lock after this.",
+              "spoken_at": -32240000
+            },
+            {
+              "speaker": "me",
+              "text": "Cool. Let's go with Postgres advisory locks instead of the lock table going forward.",
+              "spoken_at": -32200000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9102,
+      "start_time": -25200000,
+      "end_time": null,
+      "summary": "Coffee chat",
+      "transcriptions": [
+        {
+          "utterances": [
+            {
+              "speaker": "me",
+              "text": "Did you watch the match last night?",
+              "spoken_at": -25200000
+            },
+            {
+              "speaker": "Sam",
+              "text": "Only the second half, the penalty was brutal.",
+              "spoken_at": -25160000
+            },
+            {
+              "speaker": "me",
+              "text": "Ha, I need to get groceries after work anyway.",
+              "spoken_at": -25120000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9103,
+      "start_time": -18000000,
+      "end_time": null,
+      "summary": "Pairing on the retry logic in the notifications worker",
+      "transcriptions": [
+        {
+          "utterances": [
+            {
+              "speaker": "Sam",
+              "text": "The notifications worker retries forever when the SMS provider times out.",
+              "spoken_at": -18000000
+            },
+            {
+              "speaker": "me",
+              "text": "Right, I'll add exponential backoff with a max of five attempts to the notifications worker.",
+              "spoken_at": -17960000
+            },
+            {
+              "speaker": "Sam",
+              "text": "And the integration test for it is flaky on CI.",
+              "spoken_at": -17920000
+            },
+            {
+              "speaker": "me",
+              "text": "Let me quarantine the flaky integration test and open a ticket for it.",
+              "spoken_at": -17880000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9104,
+      "start_time": -7200000,
+      "end_time": null,
+      "summary": "Design review for the new audit log",
+      "transcriptions": [
+        {
+          "utterances": [
+            {
+              "speaker": "Lena",
+              "text": "We decided to store audit events in S3 with Athena on top, not in the main database.",
+              "spoken_at": -7200000
+            },
+            {
+              "speaker": "me",
+              "text": "Makes sense. I can't ship the audit log UI until the events API is deployed.",
+              "spoken_at": -7160000
+            },
+            {
+              "speaker": "Lena",
+              "text": "Understood, I'll deploy the events API tomorrow morning.",
+              "spoken_at": -7120000
+            },
+            {
+              "speaker": "me",
+              "text": "And I need to write the runbook for rotating the webhook secret.",
+              "spoken_at": -7080000
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
