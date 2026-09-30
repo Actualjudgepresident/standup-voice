@@ -25,7 +25,7 @@ export function issueBody(item: WorkItem): string {
     .join("\n");
 }
 
-function resolveToken(): string {
+export function githubToken(): string {
   if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN;
   try {
     return execFileSync("gh", ["auth", "token"], { encoding: "utf8" }).trim();
@@ -50,7 +50,7 @@ async function gh<T>(token: string, path: string, init?: RequestInit): Promise<T
 
 export async function fileIssues(repo: string, items: WorkItem[], apply: boolean): Promise<IssueResult[]> {
   if (!apply) return items.map((item) => ({ item, url: null, status: "planned" }));
-  const token = resolveToken();
+  const token = githubToken();
   // One listing of open StandupBee issues, then match fingerprints locally.
   const open = await gh<Array<{ body: string | null; html_url: string }>>(
     token,

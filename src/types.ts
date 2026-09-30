@@ -33,6 +33,18 @@ export type WorkItem = {
   confidence: number;
 };
 
+// Where a work item came from: spoken notes (via the LLM), GitHub activity,
+// or a Bee wearable conversation.
+export type ItemSource = "note" | "github" | "bee";
+
+export type StoredItem = WorkItem & {
+  id: string;
+  source: ItemSource;
+  status: "open" | "completed";
+  createdAt: number;
+  url: string | null;
+};
+
 export type Extractor = {
   name: string;
   extract: (conversations: Conversation[]) => Promise<WorkItem[]>;

@@ -1,13 +1,19 @@
 {
-  "name": "standupbee",
-  "version": "0.1.0",
-  "description": "Turn what you said out loud during a dev day (captured by Bee) into GitHub issues, Bee todos and a daily standup.",
+  "name": "standup-voice",
+  "version": "0.2.0",
+  "description": "Voice standup assistant for Alexa+: an MCP server (Streamable HTTP) that builds your daily standup from GitHub activity and spoken notes.",
   "type": "module",
   "license": "MIT",
-  "bin": { "standupbee": "src/cli.ts" },
-  "engines": { "node": ">=23.6" },
+  "bin": {
+    "standup-voice": "src/server.ts",
+    "standupbee": "src/cli.ts"
+  },
+  "engines": {
+    "node": ">=23.6"
+  },
   "scripts": {
-    "start": "node src/cli.ts",
+    "serve": "node src/server.ts",
+    "start": "node src/server.ts",
     "demo": "node src/cli.ts run --source fixtures --extractor rules",
     "test": "node --test \"test/**/*.test.ts\"",
     "typecheck": "tsc --noEmit"
@@ -16,6 +22,10 @@
     "@anthropic-ai/bedrock-sdk": "latest",
     "@anthropic-ai/sdk": "latest",
     "@beeai/cli": "^0.7.3",
+    "@modelcontextprotocol/client": "^2.2.0",
+    "@modelcontextprotocol/ext-apps": "^2.0.3",
+    "@modelcontextprotocol/node": "^2.1.0",
+    "@modelcontextprotocol/server": "^2.2.0",
     "zod": "latest"
   },
   "devDependencies": {

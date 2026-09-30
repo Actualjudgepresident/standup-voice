@@ -108,7 +108,7 @@ const PATTERNS: Array<{ kind: WorkItemKind; re: RegExp }> = [
 
 const WEARER = new Set(["me", "user"]);
 // Keeps "I'll get groceries" out of the issue tracker.
-const ENGINEERING = /\b(fix|test|deploy|api|ticket|runbook|bug|merge|pr|service|worker|refactor|migration|retry|backoff|code|ci|log|ui|database|endpoint|webhook|lock|crash|release)s?\b/i;
+const ENGINEERING = /\b(fix|test|deploy|api|ticket|runbook|bug|merge|pr|service|worker|refactor|migration|retry|backoff|code|ci|log|ui|database|endpoint|webhook|lock|crash|release|oauth|auth|secret|key|credential|access|build|server|review|repo|branch)s?\b/i;
 
 function sentences(text: string): string[] {
   return text.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
