@@ -45,6 +45,19 @@ Open the page in Chrome or Safari, tap the ring and talk, or use the suggestion 
 | `STANDUPBEE_REPO` | Default `owner/name` for `file_issue` |
 | `STANDUPBEE_GITHUB=0` | Turn off GitHub sync |
 
+### Things to say
+
+| You say | Tool called |
+|---|---|
+| "What's my standup?" · "What did I do this week?" | `get_standup` (with `days` for "this week", "last 3 days", Mondays) |
+| "I need to fix the login redirect bug" | `add_note` → saved as a bug |
+| "I'm blocked on the OAuth client secret" | `add_note` → saved as a blocker |
+| "Anything blocking me?" | `list_items` |
+| "Mark the redirect bug done" | `list_items` → `complete_item` (Claude agent or any MCP client) |
+| "File the OAuth blocker as an issue" | `file_issue`, only after you confirm (Claude agent or any MCP client) |
+
+Without `ANTHROPIC_API_KEY` the web page runs offline keyword intents that cover the first four rows. Every row works from an MCP client such as Claude Code.
+
 ### Use it from any MCP client
 
 ```bash
@@ -61,6 +74,11 @@ npm run typecheck
 ## Also included
 
 `src/cli.ts` + `src/bee.ts` form a batch mode that reads conversations from a Bee wearable through `@beeai/cli`. It was built first, for the Bee track. It is kept because the extraction pipeline is shared (`npm run demo` runs it on a recorded sample day).
+
+## Hackathon notes
+
+- [FRICTION_LOG.md](FRICTION_LOG.md): what got in the way while building, with workarounds and suggestions.
+- Licensed under [MIT](LICENSE).
 
 ## Privacy
 
