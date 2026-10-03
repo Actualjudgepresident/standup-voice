@@ -76,3 +76,13 @@ test("parseWindow rejects junk", () => {
   assert.equal(parseWindow("90m"), 90 * 60_000);
   assert.throws(() => parseWindow("yesterday"));
 });
+
+test("issue footer names where the item came from", () => {
+  assert.match(issueBody({ ...item(), source: "note" }), /from a spoken work note/);
+  assert.doesNotMatch(issueBody({ ...item(), source: "note" }), /Bee/);
+  const fromGithub = issueBody({ ...item(), source: "github", evidence: "Assigned issue #4" });
+  assert.match(fromGithub, /\*\*Source:\*\* Assigned issue #4/);
+  assert.doesNotMatch(fromGithub, /Confidence|speech-to-text/);
+  // Batch-mode items from the Bee CLI carry no source.
+  assert.match(issueBody(item({ conversationId: 9103 })), /from Bee conversation 9103/);
+});

@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import type { WorkItem } from "./types.ts";
+import type { ItemSource, WorkItem } from "./types.ts";
 
 export type IssueResult = { item: WorkItem; url: string | null; status: "created" | "exists" | "planned" };
 
@@ -10,15 +10,33 @@ export function itemFingerprint(item: WorkItem): string {
   return createHash("sha256").update(basis).digest("hex").slice(0, 12);
 }
 
-export function issueBody(item: WorkItem): string {
+// Items stored by the server know where they came from; batch-mode items from
+// the Bee CLI don't carry a source, so they default to "bee".
+type IssueItem = WorkItem & { source?: ItemSource };
+
+function provenance(item: IssueItem): string {
+  switch (item.source ?? "bee") {
+    case "note":
+      return "Filed by Standup Voice from a spoken work note. Speech-to-text can mishear names and identifiers, so double-check them.";
+    case "github":
+      return "Filed by Standup Voice from your GitHub activity.";
+    case "bee":
+      return `Filed by Standup Voice from Bee conversation ${item.conversationId}. Transcripts are speech-to-text, so double-check names and identifiers.`;
+  }
+}
+
+export function issueBody(item: IssueItem): string {
+  const heard = item.source !== "github";
   return [
     item.detail,
     "",
-    `**Heard:** ${item.evidence}`,
+    `**${heard ? "Heard" : "Source"}:** ${item.evidence}`,
     item.area ? `**Area:** ${item.area}` : null,
-    `**Confidence:** ${Math.round(item.confidence * 100)}%`,
+    heard ? `**Confidence:** ${Math.round(item.confidence * 100)}%` : null,
     "",
-    `<sub>Filed by StandupBee from Bee conversation ${item.conversationId}. Transcripts are speech-to-text, so double-check names and identifiers.</sub>`,
+    `<sub>${provenance(item)}</sub>`,
+    // Machine marker and label keep the original name so dedupe still
+    // matches any issues filed before the rename.
     `<!-- standupbee:${itemFingerprint(item)} -->`,
   ]
     .filter((l) => l !== null)
@@ -48,10 +66,10 @@ async function gh<T>(token: string, path: string, init?: RequestInit): Promise<T
   return (await res.json()) as T;
 }
 
-export async function fileIssues(repo: string, items: WorkItem[], apply: boolean): Promise<IssueResult[]> {
+export async function fileIssues(repo: string, items: IssueItem[], apply: boolean): Promise<IssueResult[]> {
   if (!apply) return items.map((item) => ({ item, url: null, status: "planned" }));
   const token = githubToken();
-  // One listing of open StandupBee issues, then match fingerprints locally.
+  // One listing of open Standup Voice issues, then match fingerprints locally.
   const open = await gh<Array<{ body: string | null; html_url: string }>>(
     token,
     `/repos/${repo}/issues?state=open&labels=standupbee&per_page=100`,
