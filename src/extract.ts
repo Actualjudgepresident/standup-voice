@@ -168,3 +168,17 @@ export function pickExtractor(name: string): Extractor {
       throw new Error(`Unknown extractor "${name}" (use anthropic, bedrock or rules)`);
   }
 }
+
+export function withFallbackExtractor(primary: Extractor, fallback: Extractor): Extractor {
+  return {
+    name: primary.name,
+    async extract(conversations) {
+      try {
+        return await primary.extract(conversations);
+      } catch (err) {
+        console.error(`${primary.name} extraction failed, using ${fallback.name}: ${err instanceof Error ? err.message : err}`);
+        return fallback.extract(conversations);
+      }
+    },
+  };
+}

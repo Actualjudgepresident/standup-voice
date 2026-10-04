@@ -125,16 +125,25 @@ function speak(text) {
   speechSynthesis.speak(u);
 }
 
+// Hosted demo links carry the access key in the fragment (#key=...), which
+// never reaches server logs; remember it so the link can be bookmarked bare.
+let key = new URLSearchParams(location.hash.slice(1)).get("key");
+try {
+  if (key) { localStorage.setItem("standup-key", key); history.replaceState(null, "", location.pathname); }
+  else key = localStorage.getItem("standup-key");
+} catch {}
+
 async function ask(utterance) {
   utterance = utterance.replace(/^(hey |ok )?alexa[,\s]*/i, "").trim();
   if (!utterance) return;
   add("you", utterance);
   mic.className = "thinking";
   try {
-    const res = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ utterance }) });
+    const res = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json", ...(key ? { Authorization: `Bearer ${key}` } : {}) }, body: JSON.stringify({ utterance }) });
     const data = await res.json();
+    if (res.status === 401) throw new Error("this server needs an access key. Open the full demo link that includes #key=…");
     if (!res.ok) throw new Error(data.error || res.statusText);
-    $("agent").textContent = `agent: ${data.agent}`;
+    $("agent").textContent = data.fallback ? `agent: ${data.fallback} (${data.agent} unavailable)` : `agent: ${data.agent}`;
     add("alexa", data.speech, data.trace);
     if (data.card) renderCard(data.card);
     speak(data.speech);
