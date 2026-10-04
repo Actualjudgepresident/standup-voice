@@ -17,9 +17,9 @@ type SearchCommit = {
   repository: { full_name: string };
 };
 
-async function search<T>(token: string, kind: "issues" | "commits", q: string): Promise<T[]> {
+async function search<T>(token: string | null, kind: "issues" | "commits", q: string): Promise<T[]> {
   const res = await fetch(`https://api.github.com/search/${kind}?q=${encodeURIComponent(q)}&per_page=30`, {
-    headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28" },
+    headers: { Accept: "application/vnd.github+json", ...(token ? { Authorization: `Bearer ${token}` } : {}), "X-GitHub-Api-Version": "2022-11-28" },
   });
   if (!res.ok) throw new Error(`GitHub search failed: ${res.status} ${await res.text()}`);
   return ((await res.json()) as { items: T[] }).items;
@@ -33,16 +33,20 @@ export type ActivityItem = { item: WorkItem; url: string; at: number };
 // and commits become Done; assigned issues and review requests become Next;
 // your own PRs still open for over a day read as waiting on review.
 export async function githubActivity(sinceMs: number, now = Date.now()): Promise<ActivityItem[]> {
-  const token = githubToken();
+  // With STANDUPBEE_GITHUB_USER set and no token, read public activity
+  // unauthenticated, so a hosted demo needs no GitHub secret at all.
+  const user = process.env.STANDUPBEE_GITHUB_USER;
+  const token = user && !process.env.GITHUB_TOKEN ? null : githubToken();
+  const me = user ?? "@me";
   const day = new Date(sinceMs).toISOString().slice(0, 10);
   const staleBefore = now - 86_400_000;
   const [merged, closed, commits, assigned, reviews, mineOpen] = await Promise.all([
-    search<SearchIssue>(token, "issues", `author:@me is:pr is:merged merged:>=${day}`),
-    search<SearchIssue>(token, "issues", `assignee:@me is:issue is:closed closed:>=${day}`),
-    search<SearchCommit>(token, "commits", `author:@me committer-date:>=${day}`),
-    search<SearchIssue>(token, "issues", `assignee:@me is:issue is:open`),
-    search<SearchIssue>(token, "issues", `review-requested:@me is:pr is:open`),
-    search<SearchIssue>(token, "issues", `author:@me is:pr is:open`),
+    search<SearchIssue>(token, "issues", `author:${me} is:pr is:merged merged:>=${day}`),
+    search<SearchIssue>(token, "issues", `assignee:${me} is:issue is:closed closed:>=${day}`),
+    search<SearchCommit>(token, "commits", `author:${me} committer-date:>=${day}`),
+    search<SearchIssue>(token, "issues", `assignee:${me} is:issue is:open`),
+    search<SearchIssue>(token, "issues", `review-requested:${me} is:pr is:open`),
+    search<SearchIssue>(token, "issues", `author:${me} is:pr is:open`),
   ]);
 
   const base = { detail: "", ownedByWearer: true, conversationId: 0, confidence: 1 };

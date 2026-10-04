@@ -38,12 +38,16 @@ Open the page in Chrome or Safari, tap the ring and talk, or use the suggestion 
 
 | Env var | |
 |---|---|
-| `ANTHROPIC_API_KEY` | Enables the Claude agent and Claude note extraction. Without it, offline keyword intents run the same MCP tools. |
-| `STANDUPBEE_EXTRACTOR` | `anthropic` · `bedrock` · `rules` |
+| `STANDUPBEE_AGENT` | `bedrock` (Claude on Amazon Bedrock) · `anthropic` · `intents` (offline). Default: `anthropic` if `ANTHROPIC_API_KEY` is set, else `intents`. If the model call fails, the reply falls back to offline intents and the page says so. |
+| `ANTHROPIC_API_KEY` | Enables the Claude agent and Claude note extraction through the Anthropic API. |
+| `STANDUPBEE_EXTRACTOR` | `anthropic` · `bedrock` · `rules`. Defaults to match the agent. |
 | `AWS_REGION`, `STANDUPBEE_BEDROCK_MODEL` | Claude on Amazon Bedrock (default `anthropic.claude-opus-5-5`) |
 | `GITHUB_TOKEN` | GitHub access; falls back to `gh auth token` |
 | `STANDUPBEE_REPO` | Default `owner/name` for `file_issue` |
+| `STANDUPBEE_GITHUB_USER` | Read this user's public GitHub activity without a token (for hosted demos) |
 | `STANDUPBEE_GITHUB=0` | Turn off GitHub sync |
+| `STANDUPBEE_PUBLIC_HOST` | Public hostname when deployed behind a reverse proxy. Requires `STANDUPBEE_TOKEN`. |
+| `STANDUPBEE_TOKEN` | Bearer token required on `/mcp` and `/api/ask`. The web page reads it from a `#key=…` link fragment. |
 
 ### Things to say
 
@@ -62,7 +66,17 @@ Without `ANTHROPIC_API_KEY` the web page runs offline keyword intents that cover
 
 ```bash
 claude mcp add --transport http standup http://127.0.0.1:8787/mcp
+# a hosted instance with a token:
+claude mcp add --transport http standup https://your-host/mcp --header "Authorization: Bearer $STANDUPBEE_TOKEN"
 ```
+
+### Claude on Amazon Bedrock
+
+```bash
+STANDUPBEE_AGENT=bedrock AWS_REGION=us-east-1 npm run serve
+```
+
+Uses the normal AWS credential chain (profile, env vars or an EC2 instance role). The identity needs `bedrock-mantle:CreateInference` (plus `bedrock:InvokeModel*` for the classic endpoint) and model access for Claude in the Bedrock console.
 
 ## Tests
 

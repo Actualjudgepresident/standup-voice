@@ -1,8 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { AnthropicBedrockMantle } from "@anthropic-ai/bedrock-sdk";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 
 export type ToolTrace = { name: string; args: Record<string, unknown>; result: string };
-export type AgentReply = { speech: string; trace: ToolTrace[]; card: string | null };
+export type AgentReply = { speech: string; trace: ToolTrace[]; card: string | null; fallback?: string };
 export type Agent = { name: string; ask: (utterance: string) => Promise<AgentReply> };
 
 type McpTool = { name: string; description?: string; inputSchema: Record<string, unknown> };
@@ -11,9 +12,10 @@ type CallResult = { content?: Array<{ type: string; text?: string }>; structured
 // Plays the Alexa+ role: an agent that discovers the standup tools over MCP
 // (Streamable HTTP, the same way Alexa+ connects to third-party servers) and
 // calls them to answer a spoken request.
-async function connect(mcpUrl: string) {
+async function connect(mcpUrl: string, token?: string) {
   const client = new Client({ name: "standup-voice", version: "0.2.0" });
-  await client.connect(new StreamableHTTPClientTransport(new URL(mcpUrl)));
+  const requestInit = token ? { headers: { Authorization: `Bearer ${token}` } } : undefined;
+  await client.connect(new StreamableHTTPClientTransport(new URL(mcpUrl), { requestInit }));
   const { tools } = (await client.listTools()) as { tools: McpTool[] };
   const call = async (name: string, args: Record<string, unknown>) => {
     const res = (await client.callTool({ name, arguments: args })) as CallResult;
@@ -30,12 +32,15 @@ Your reply is read aloud: one to three short sentences, no markdown, no lists, n
 - To mark something done, find it with list_items first, then complete_item.
 - Only call file_issue after the engineer has said yes to filing it.`;
 
-export function claudeAgent(mcpUrl: string, model = process.env.STANDUPBEE_MODEL ?? "claude-opus-5-5"): Agent {
-  const anthropic = new Anthropic();
+type MessagesClient = Pick<Anthropic, "messages">;
+
+export function claudeAgent(mcpUrl: string, opts: { client?: MessagesClient; model?: string; label?: string; token?: string } = {}): Agent {
+  const anthropic = opts.client ?? new Anthropic();
+  const model = opts.model ?? process.env.STANDUPBEE_MODEL ?? "claude-opus-5-5";
   return {
-    name: `claude:${model}`,
+    name: `${opts.label ?? "claude"}:${model}`,
     async ask(utterance) {
-      const mcp = await connect(mcpUrl);
+      const mcp = await connect(mcpUrl, opts.token);
       const trace: ToolTrace[] = [];
       let card: string | null = null;
       try {
@@ -95,11 +100,11 @@ export function standupDays(u: string): number | undefined {
 
 // No-API-key fallback: keyword intents mapped straight onto the same MCP
 // tools, so the voice demo and the MCP path still work offline.
-export function intentAgent(mcpUrl: string): Agent {
+export function intentAgent(mcpUrl: string, token?: string): Agent {
   return {
     name: "intents",
     async ask(utterance) {
-      const mcp = await connect(mcpUrl);
+      const mcp = await connect(mcpUrl, token);
       const trace: ToolTrace[] = [];
       const run = async (name: string, args: Record<string, unknown>) => {
         const r = await mcp.call(name, args);
@@ -122,6 +127,44 @@ export function intentAgent(mcpUrl: string): Agent {
         return { speech: r.text, trace, card: null };
       } finally {
         await mcp.client.close();
+      }
+    },
+  };
+}
+
+// Claude on Amazon Bedrock, using the normal AWS credential chain (profile,
+// env vars, or the EC2 instance role).
+export function bedrockAgent(mcpUrl: string, token?: string): Agent {
+  const client = new AnthropicBedrockMantle({ awsRegion: process.env.AWS_REGION ?? "us-east-1" });
+  const model = process.env.STANDUPBEE_BEDROCK_MODEL ?? "anthropic.claude-opus-5-5";
+  return claudeAgent(mcpUrl, { client, model, label: "bedrock", token });
+}
+
+export function pickAgent(name: string, mcpUrl: string, token?: string): Agent {
+  switch (name) {
+    case "anthropic":
+      return claudeAgent(mcpUrl, { token });
+    case "bedrock":
+      return bedrockAgent(mcpUrl, token);
+    case "intents":
+      return intentAgent(mcpUrl, token);
+    default:
+      throw new Error(`Unknown agent "${name}" (use anthropic, bedrock or intents)`);
+  }
+}
+
+// A live demo must never go silent: if the model call fails (no Bedrock
+// access yet, throttling), answer through the offline intents and say so.
+export function withFallback(primary: Agent, fallback: Agent): Agent {
+  return {
+    name: primary.name,
+    async ask(utterance) {
+      try {
+        return await primary.ask(utterance);
+      } catch (err) {
+        console.error(`${primary.name} failed, using ${fallback.name}: ${err instanceof Error ? err.message : err}`);
+        const reply = await fallback.ask(utterance);
+        return { ...reply, fallback: fallback.name };
       }
     },
   };

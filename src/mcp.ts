@@ -75,8 +75,8 @@ export function createMcpServer(service: StandupService): McpServer {
       title: "List work items",
       description: "List tracked work items, optionally by kind (task, bug, done, blocker, decision) or status. Use for 'what's blocking me', 'what bugs are open'.",
       inputSchema: z.object({
-        kind: z.enum(WORK_ITEM_KINDS).optional(),
-        status: z.enum(["open", "completed"]).optional(),
+        kind: z.enum(WORK_ITEM_KINDS).optional().describe("Only items of this kind"),
+        status: z.enum(["open", "completed"]).optional().describe("Only open or only completed items"),
       }),
       outputSchema: z.object({ items: z.array(itemShape) }),
       annotations: { readOnlyHint: true },
@@ -92,8 +92,8 @@ export function createMcpServer(service: StandupService): McpServer {
     "complete_item",
     {
       title: "Mark item done",
-      description: "Mark a task, bug or blocker as done by id (from list_items or get_standup). It shows up under Done in the next standup.",
-      inputSchema: z.object({ id: z.string() }),
+      description: "Mark a task, bug or blocker as done by id (from list_items or get_standup). It shows up under Done in the next standup. Use for 'mark the redirect bug done', 'I finished the OAuth fix'.",
+      inputSchema: z.object({ id: z.string().describe("Item id from list_items or get_standup") }),
       outputSchema: z.object({ item: itemShape }),
       annotations: { idempotentHint: true },
     },
@@ -107,8 +107,8 @@ export function createMcpServer(service: StandupService): McpServer {
     "file_issue",
     {
       title: "File a GitHub issue",
-      description: "Create a GitHub issue for a task or bug by id. Confirm with the engineer first. Safe to repeat: an item already filed returns its existing issue.",
-      inputSchema: z.object({ id: z.string(), repo: z.string().optional().describe("owner/name; defaults to the configured repo") }),
+      description: "Create a GitHub issue for a task or bug by id. Use for 'file that as an issue', 'open a ticket for the redirect bug'. Confirm with the engineer first. Safe to repeat: an item already filed returns its existing issue.",
+      inputSchema: z.object({ id: z.string().describe("Item id from list_items or get_standup"), repo: z.string().optional().describe("owner/name; defaults to the configured repo") }),
       outputSchema: z.object({ item: itemShape }),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
